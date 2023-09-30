@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OTU Bar Chart</title>
+    <!-- Include D3.js library -->
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <!-- Include Plotly.js library -->
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+</head>
+<body>
+    <h1>Top 10 OTUs Found</h1>
+    
+    <!-- Dropdown menu to select an individual -->
+    <select id="selDataset"></select>
+
+    <!-- Container for the horizontal bar chart -->
+    <div id="bar-chart"></div>
+
+    <script>
+        // Load the JSON data from the provided URL
+        d3.json("https://2u-data-curriculum-team.s3.amazonaws.com/dataviz-classroom/v1.1/14-Interactive-Web-Visualizations/02-Homework/samples.json")
+            .then(function(data) {
+                // Populate the dropdown with individual IDs
+                var dropdown = d3.select("#selDataset");
+                data.names.forEach(function(name) {
+                    dropdown.append("option").text(name).property("value", name);
+                });
+
+                // Function to update the chart based on user selection
+                function updateChart(selectedValue) {
+                    var sample = data.samples.find(function(sample) {
+                        return sample.id === selectedValue;
+                    });
+
+                    // Extract the top 10 OTUs
+                    var top10SampleValues = sample.sample_values.slice(0, 10).reverse();
+                    var top10OTUIds = sample.otu_ids.slice(0, 10).reverse().map(id => `OTU ${id}`);
+                    var top10OTULabels = sample.otu_labels.slice(0, 10).reverse();
+
+                    // Create the horizontal bar chart
+                    var trace = {
+                        x: top10SampleValues,
+                        y: top10OTUIds,
+                        text: top10OTULabels,
+                        type: "bar",
+                        orientation: "h"
+                    };
+
+                    var layout = {
+                        title: `Top 10 OTUs Found in ${selectedValue}`,
+                        xaxis: {
+                            title: "Sample Values"
+                        },
+                        yaxis: {
+                            tickmode: "array",
+                            tickvals: top10OTUIds,
+                            ticktext: top10OTUIds
+                        }
+                    };
+
+                    var dataToPlot = [trace];
+
+                    Plotly.newPlot("bar-chart", dataToPlot, layout);
+                }
+
+                // Initial chart with the first individual's data
+                var initialSample = data.names[0];
+                updateChart(initialSample);
+
+                // Event listener for dropdown change
+                dropdown.on("change", function() {
+                    var selectedValue = this.value;
+                    updateChart(selectedValue);
+                });
+            })
+            .catch(function(error) {
+                console.log(error);
+            });
+    </script>
+</body>
+</html>
